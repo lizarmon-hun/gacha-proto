@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>간단한 가챠 프로토타입</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      padding: 20px;
+    }
+
+    h1 {
+      margin-bottom: 30px;
+      font-size: 2rem;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    }
+
+    #pullBtn {
+      background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+      border: none;
+      padding: 18px 50px;
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: white;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 8px 25px rgba(238, 90, 36, 0.4);
+      transition: all 0.3s ease;
+      margin-bottom: 40px;
+    }
+
+    #pullBtn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(238, 90, 36, 0.6);
+    }
+
+    #pullBtn:active {
+      transform: translateY(0);
+    }
+
+    #pullBtn:disabled {
+      background: #555;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* 결과 카드 */
+    #result {
+      width: 280px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 30px 20px;
+      text-align: center;
+      border: 2px solid transparent;
+      opacity: 0;
+      transform: scale(0.7) translateY(30px);
+      transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      pointer-events: none;
+    }
+
+    #result.show {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      pointer-events: auto;
+    }
+
+    #result.common { border-color: #a0a0a0; box-shadow: 0 0 30px rgba(160, 160, 160, 0.3); }
+    #result.rare   { border-color: #4fc3f7; box-shadow: 0 0 30px rgba(79, 195, 247, 0.5); }
+    #result.epic   { border-color: #ba68c8; box-shadow: 0 0 30px rgba(186, 104, 200, 0.5); }
+    #result.ssr    { border-color: #ffd700; box-shadow: 0 0 40px rgba(255, 215, 0, 0.7); }
+
+    .rarity {
+      font-size: 0.9rem;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+      opacity: 0.9;
+    }
+
+    .name {
+      font-size: 1.8rem;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .desc {
+      font-size: 0.95rem;
+      opacity: 0.8;
+      line-height: 1.4;
+    }
+
+    .stars {
+      margin-top: 15px;
+      font-size: 1.4rem;
+      letter-spacing: 3px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>✦ 가챠 프로토타입 ✦</h1>
+
+  <button id="pullBtn">가챠 뽑기!</button>
+
+  <div id="result">
+    <div class="rarity" id="rarityText"></div>
+    <div class="name" id="nameText"></div>
+    <div class="desc" id="descText"></div>
+    <div class="stars" id="starsText"></div>
+  </div>
+
+  <script>
+    // ===== 가챠 데이터 =====
+    const items = [
+      // 일반 (Common) - 확률 높음
+      { name: "슬라임", desc: "평범한 슬라임이다.", rarity: "common", stars: "★", weight: 50 },
+      { name: "고블린", desc: "약한 고블린이다.", rarity: "common", stars: "★", weight: 45 },
+      { name: "늑대", desc: "숲의 늑대.", rarity: "common", stars: "★", weight: 40 },
+
+      // 레어 (Rare)
+      { name: "엘프 궁수", desc: "날카로운 화살을 쏜다.", rarity: "rare", stars: "★★", weight: 20 },
+      { name: "마법사", desc: "기초 마법을 다룬다.", rarity: "rare", stars: "★★", weight: 18 },
+      { name: "기사", desc: "충실한 기사.", rarity: "rare", stars: "★★", weight: 15 },
+
+      // 에픽 (Epic)
+      { name: "드래곤 기사", desc: "드래곤을 다루는 기사.", rarity: "epic", stars: "★★★", weight: 8 },
+      { name: "대마법사", desc: "강력한 마법을 구사한다.", rarity: "epic", stars: "★★★", weight: 6 },
+
+      // SSR
+      { name: "전설의 영웅", desc: "세상을 구한 영웅.", rarity: "ssr", stars: "★★★★", weight: 2 },
+      { name: "신의 검", desc: "신화가 깃든 검.", rarity: "ssr", stars: "★★★★★", weight: 1 },
+    ];
+
+    // 희귀도 한글 표시
+    const rarityNames = {
+      common: "일반",
+      rare: "레어",
+      epic: "에픽",
+      ssr: "SSR"
+    };
+
+    // ===== 가중치 랜덤 함수 =====
+    function weightedRandom(list) {
+      const totalWeight = list.reduce((sum, item) => sum + item.weight, 0);
+      let random = Math.random() * totalWeight;
+
+      for (const item of list) {
+        if (random < item.weight) {
+          return item;
+        }
+        random -= item.weight;
+      }
+      return list[list.length - 1];
+    }
+
+    // ===== 뽑기 실행 =====
+    const pullBtn = document.getElementById('pullBtn');
+    const result = document.getElementById('result');
+
+    pullBtn.addEventListener('click', () => {
+      // 버튼 잠시 비활성화 (연타 방지)
+      pullBtn.disabled = true;
+      pullBtn.textContent = "뽑는 중...";
+
+      // 결과 숨기기 (애니메이션 재실행용)
+      result.classList.remove('show', 'common', 'rare', 'epic', 'ssr');
+
+      // 약간의 딜레이 후 결과 표시 (긴장감)
+      setTimeout(() => {
+        const pulled = weightedRandom(items);
+
+        // 결과 채우기
+        document.getElementById('rarityText').textContent = rarityNames[pulled.rarity];
+        document.getElementById('nameText').textContent = pulled.name;
+        document.getElementById('descText').textContent = pulled.desc;
+        document.getElementById('starsText').textContent = pulled.stars;
+
+        // 희귀도에 따른 스타일 적용
+        result.classList.add(pulled.rarity, 'show');
+
+        // 버튼 다시 활성화
+        pullBtn.disabled = false;
+        pullBtn.textContent = "가챠 뽑기!";
+      }, 400);
+    });
+  </script>
+</body>
+</html>
