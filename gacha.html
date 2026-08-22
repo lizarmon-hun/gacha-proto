@@ -109,6 +109,21 @@
       font-size: 1.4rem;
       letter-spacing: 3px;
     }
+
+    .result-img {
+      width: 140px;
+      height: 140px;
+      object-fit: cover;
+      border-radius: 16px;
+      margin-bottom: 16px;
+      border: 3px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      display: none; /* 처음엔 숨김 */
+    }
+
+    .result-img.show-img {
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -118,6 +133,7 @@
   <button id="pullBtn">가챠 뽑기!</button>
 
   <div id="result">
+    <img id="resultImage" src = "" alt="결과 이미지" class="result-img">
     <div class="rarity" id="rarityText"></div>
     <div class="name" id="nameText"></div>
     <div class="desc" id="descText"></div>
@@ -128,7 +144,7 @@
     // ===== 가챠 데이터 =====
     const items = [
       // 기본 포켓몬
-      { name: "피츄", desc: "No.0172/아기쥐포켓몬", rarity: "기본", stars: "★", weight: 50 },
+      { name: "피츄", desc: "No.0172/아기쥐포켓몬", rarity: "기본", stars: "★", weight: 50, img: "https://static.wikia.nocookie.net/pokemon/images/b/bb/%ED%94%BC%EC%B8%84_%EA%B3%B5%EC%8B%9D_%EC%9D%BC%EB%9F%AC%EC%8A%A4%ED%8A%B8.png/revision/latest?cb=20170406071056&path-prefix=ko" },
       { name: "팽도리", desc: "No.0393/펭귄포켓몬", rarity: "기본", stars: "★", weight: 50 },
       { name: "뜨아거", desc: "No.0909/불꽃악어포켓몬", rarity: "기본", stars: "★", weight: 50 },
 
@@ -144,7 +160,7 @@
 
       // SSR
       { name: "펄기아", desc: "No.0484/공간포켓몬", rarity: "전설", stars: "★★★★", weight: 1 },
-      { name: "신의 검", desc: "신화가 깃든 검.", rarity: "ssr", stars: "★★★★★", weight: 1 },
+      { name: "디아루가", desc: "No.0483/시간포켓몬", rarity: "전설", stars: "★★★★", weight: 1 },
     ];
 
     // 희귀도 한글 표시
@@ -184,6 +200,15 @@
       // 약간의 딜레이 후 결과 표시 (긴장감)
       setTimeout(() => {
         const pulled = weightedRandom(items);
+
+        const imgElement = document.getElementById('resultImage');
+        if (pulled.image) {
+          imgElement.src = pulled.img;
+          imgElement.classList.add('show-img');
+        } else {
+          imgElement.src = "";
+          imgElement.classList.remove('show-img');
+        }
 
         // 결과 채우기
         document.getElementById('rarityText').textContent = rarityNames[pulled.rarity];
